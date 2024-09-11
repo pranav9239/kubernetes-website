@@ -18,6 +18,8 @@ jobs:
 
     - name: Deploy a container
       run: |
+        echo $HOME
+        pwd
         cd docker
         echo "Building docker image"
         docker build -t git-docker-test .
