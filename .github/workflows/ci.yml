@@ -1,27 +1,41 @@
-name: CI Pipeline  # Name of the workflow
+name: CI Pipeline
 
 on:
-  workflow_dispatch:   # Enables the workflow to be triggered manually
+  workflow_dispatch:
     inputs:
       environment:
         description: "Which environment to deploy"
         required: true
-        default: "production"
+        default: "dev"
 
 jobs:
   build:
-    runs-on: self-hosted    # Use self-hosted runner
-
+    runs-on: self-hosted
     steps:
-    - name: Checkout code   # Step 1: Checkout the repository
+    - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Deploy a container
+    - name: Build Docker image
       run: |
-        echo $HOME
-        pwd
-        cd docker
         echo "Building docker image"
+        cd docker
         docker build -t git-docker-test .
-        echo "Starting a container"
-        docker run -d -p 3000:9080 git-docker-test
+
+  deploy:
+    runs-on: self-hosted
+    needs: build
+    steps:
+    - name: Deploy Docker container
+      run: |
+        echo "Starting Docker container"
+        docker run -d -p 3000:80 git-docker-test
+
+  test:
+    runs-on: self-hosted
+    needs: deploy
+    steps:
+    - name: Check if website is accessible
+      run: |
+        echo "Testing if the website is accessible"
+        sleep 10  # Wait for a few seconds to ensure the container is up
+        curl --fail http://localhost:3000
